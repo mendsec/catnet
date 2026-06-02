@@ -1,26 +1,38 @@
-﻿name: CI
+name: CI
 
 on:
   push:
+    branches: [ "main", "develop" ]
   pull_request:
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout catnet
         uses: actions/checkout@v4
+        with:
+          path: catnet
+
+      - name: Checkout catnet-core
+        uses: actions/checkout@v4
+        with:
+          repository: mendsec/catnet-core
+          path: catnet-core
 
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.22'
 
       - name: Verify modules
+        working-directory: catnet
         run: go mod tidy && git diff --exit-code
 
       - name: Vet
+        working-directory: catnet
         run: go vet ./...
 
       - name: Test
+        working-directory: catnet
         run: go test ./...
