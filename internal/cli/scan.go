@@ -14,6 +14,7 @@ import (
 )
 
 var (
+	format          string
 	scanPorts       []int
 	scanThreads     int
 	scanPingTimeout int
@@ -114,4 +115,5 @@ func init() {
 	scanCmd.Flags().StringVarP(&scanOutput, "output", "o", "", "Write JSON output to file instead of stdout")
 	scanCmd.Flags().BoolVarP(&scanQuiet, "quiet", "q", false, "Suppress progress output")
 	scanCmd.Flags().BoolVar(&scanNoPorts, "no-ports", false, "Skip port scanning entirely")
+	scanCmd.Flags().StringVar(&format, "format", "human", "Output format: json, human")
 }

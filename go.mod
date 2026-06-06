@@ -1,9 +1,9 @@
 module github.com/mendsec/catnet
 
-go 1.26.3
+go 1.26.4
 
 require (
-	github.com/mendsec/catnet-core v0.1.1-0.20260606132841-09db82a7e02c
+	github.com/mendsec/catnet-core v0.1.1
 	github.com/spf13/cobra v1.10.2
 )
 

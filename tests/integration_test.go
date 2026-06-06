@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -12,34 +13,41 @@ import (
 	"github.com/mendsec/catnet/internal/cli"
 )
 
-func resetFlags() {
-	// Root flag reset
-	os.Args = []string{"catnet"}
-	// It's a bit tricky to reset Cobra flags cleanly between tests if they run in same process
+var binaryPath string
+
+func TestMain(m *testing.M) {
+	// Build the binary
+	tmpDir, err := os.MkdirTemp("", "catnet-test")
+	if err != nil {
+		os.Exit(1)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	if runtime.GOOS == "windows" {
+		binaryPath = filepath.Join(tmpDir, "catnet.exe")
+	} else {
+		binaryPath = filepath.Join(tmpDir, "catnet")
+	}
+
+	cmd := exec.Command("go", "build", "-o", binaryPath, "../cmd/catnet")
+	if err := cmd.Run(); err != nil {
+		os.Exit(1)
+	}
+
+	code := m.Run()
+	os.Exit(code)
 }
 
 func TestScanOutputJSON(t *testing.T) {
-	os.Args = []string{"catnet", "scan", "127.0.0.1", "--format", "json", "--quiet"}
-	
-	// Capture stdout
-	oldStdout := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
-	err := cli.Execute()
-	w.Close()
-	os.Stdout = oldStdout
-
+	cmd := exec.Command(binaryPath, "scan", "127.0.0.1", "--format", "json", "--quiet")
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Fatalf("Expected nil error, got %v", err)
+		t.Fatalf("Expected nil error, got %v: %s", err, out)
 	}
 
-	var buf bytes.Buffer
-	buf.ReadFrom(r)
-	
 	var data map[string]interface{}
-	if err := json.Unmarshal(buf.Bytes(), &data); err != nil {
-		t.Fatalf("Output is not valid JSON: %v", err)
+	if err := json.Unmarshal(out, &data); err != nil {
+		t.Fatalf("Output is not valid JSON: %v\nOutput was: %s", err, out)
 	}
 	
 	if ver, ok := data["schemaVersion"].(string); !ok || ver != "1.0.0" {
@@ -51,41 +59,50 @@ func TestScanCancelledByContext(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Signal testing is unreliable on Windows")
 	}
-	os.Args = []string{"catnet", "scan", "10.0.0.1-255", "--ping-timeout", "1000"}
+	cmd := exec.Command(binaryPath, "scan", "10.0.0.1-255", "--ping-timeout", "1000")
+	
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("Failed to start: %v", err)
+	}
 
 	// Trigger a background cancel
 	go func() {
 		time.Sleep(100 * time.Millisecond)
-		p, _ := os.FindProcess(os.Getpid())
-		p.Signal(os.Interrupt)
+		cmd.Process.Signal(os.Interrupt)
 	}()
 
-	err := cli.Execute()
+	err := cmd.Wait()
 	
 	if err == nil {
 		t.Fatalf("Expected error due to cancellation")
 	}
 	
-	if exitErr, ok := err.(*cli.ExitError); !ok || exitErr.Code != cli.ExitCodeInterrupted {
-		t.Errorf("Expected ExitCodeInterrupted, got %v", err)
+	if exitErr, ok := err.(*exec.ExitError); ok {
+		if exitErr.ExitCode() != cli.ExitCodeInterrupted {
+			t.Errorf("Expected ExitCodeInterrupted (%d), got %v", cli.ExitCodeInterrupted, exitErr.ExitCode())
+		}
+	} else {
+		t.Errorf("Expected ExitError, got %v", err)
 	}
 }
 
 func TestScanInvalidTarget(t *testing.T) {
-	os.Args = []string{"catnet", "scan", "not-a-valid-ip"}
-	
-	err := cli.Execute()
+	cmd := exec.Command(binaryPath, "scan", "not-a-valid-ip")
+	err := cmd.Run()
 	if err == nil {
 		t.Fatalf("Expected error for invalid target")
 	}
 	
-	if exitErr, ok := err.(*cli.ExitError); !ok || exitErr.Code != cli.ExitCodeInputError {
-		t.Errorf("Expected ExitCodeInputError, got %v", err)
+	if exitErr, ok := err.(*exec.ExitError); ok {
+		if exitErr.ExitCode() != cli.ExitCodeInputError {
+			t.Errorf("Expected ExitCodeInputError (%d), got %v", cli.ExitCodeInputError, exitErr.ExitCode())
+		}
+	} else {
+		t.Errorf("Expected ExitError, got %v", err)
 	}
 }
 
 func TestExportCSVFromJSON(t *testing.T) {
-	// Create a temp JSON file
 	tmpDir := t.TempDir()
 	jsonPath := filepath.Join(tmpDir, "input.json")
 	
@@ -95,48 +112,25 @@ func TestExportCSVFromJSON(t *testing.T) {
 	}
 	os.WriteFile(jsonPath, jsonBytes, 0644)
 
-	os.Args = []string{"catnet", "export", jsonPath, "--format", "csv"}
-	
-	oldStdout := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
-	err = cli.Execute()
-	w.Close()
-	os.Stdout = oldStdout
-
+	cmd := exec.Command(binaryPath, "export", jsonPath, "--format", "csv")
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Fatalf("Expected nil error, got %v", err)
+		t.Fatalf("Expected nil error, got %v: %s", err, out)
 	}
 
-	var buf bytes.Buffer
-	buf.ReadFrom(r)
-	
-	outStr := buf.String()
-	if !bytes.Contains([]byte(outStr), []byte("IP,Hostname,MAC,Status")) {
-		t.Errorf("CSV output missing header, got: %s", outStr)
+	if !bytes.Contains(out, []byte("IP,Hostname,MAC,Status")) {
+		t.Errorf("CSV output missing header, got: %s", out)
 	}
 }
 
 func TestVersionOutput(t *testing.T) {
-	os.Args = []string{"catnet", "version"}
-	
-	oldStdout := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
-	err := cli.Execute()
-	w.Close()
-	os.Stdout = oldStdout
-
+	cmd := exec.Command(binaryPath, "version")
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Fatalf("Expected nil error, got %v", err)
+		t.Fatalf("Expected nil error, got %v: %s", err, out)
 	}
 
-	var buf bytes.Buffer
-	buf.ReadFrom(r)
-	
-	if !bytes.Contains(buf.Bytes(), []byte("catnet")) {
-		t.Errorf("Expected version output to contain 'catnet', got: %s", buf.String())
+	if !bytes.Contains(out, []byte("catnet")) {
+		t.Errorf("Expected version output to contain 'catnet', got: %s", out)
 	}
 }

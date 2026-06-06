@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Created `human_test.go` for isolated unit testing of standard and quiet human output formatting through dependency injection.
+
+### Changed
+- Updated `catnet-core` dependency to `v0.1.1`.
+- Migrated integration tests to use `os/exec` subprocesses with a `TestMain` binary builder to achieve true state isolation and reliable signal cancellation tests.
+
+### Fixed
+- Fixed `--format` flag shadowing issue in `exportCmd` by making it locally scoped and mutually exclusive, avoiding inheritance from `rootCmd`.
+- Fixed test state bleeding by ensuring `os.Args` and `os.Stdout` are restored properly using `defer` during tests that required temporary global mutation.
 ## [0.1.0] - 2026-06-06
 ### Added
 - Initial scaffolding of the CLI repository (`github.com/mendsec/catnet`).

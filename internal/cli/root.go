@@ -5,7 +5,6 @@ import (
 )
 
 var (
-	format  string
 	noColor bool
 )
 
@@ -18,7 +17,6 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&format, "format", "human", "Output format: json, human")
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "Disable colored output")
 }
 

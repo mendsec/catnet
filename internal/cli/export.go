@@ -38,7 +38,6 @@ var exportCmd = &cobra.Command{
 			}
 		}
 
-		// Read the shadowed 'format' flag (it overwrites the persistent one)
 		fVal, _ := cmd.Flags().GetString("format")
 		
 		var outBytes []byte
