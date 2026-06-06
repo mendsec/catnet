@@ -55,7 +55,8 @@ The JSON output contains the following structure:
 | Field | Type | Description |
 |---|---|---|
 | `schemaVersion` | string | The version of the JSON schema (e.g., "1.0.0") |
-| `engineVersion` | string | The version of catnet-core used |
+| `startTime` | string | ISO 8601 timestamp when the scan started |
+| `endTime` | string | ISO 8601 timestamp when the scan completed |
 | `total` | int | Total number of IP addresses scanned |
 | `alive` | int | Total number of hosts found alive |
 | `devices` | array | List of scanned devices with their details |
@@ -63,7 +64,7 @@ The JSON output contains the following structure:
 Device fields:
 | Field | Type | Description |
 |---|---|---|
-| `ip` | string | IPv4 or IPv6 address |
+| `ip` | string | IPv4 address |
 | `isAlive` | boolean | True if the host responded to ping |
 | `hostname` | string | Reverse DNS hostname |
 | `mac` | string | MAC address (if on local subnet) |
