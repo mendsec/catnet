@@ -1,19 +1,26 @@
-﻿# Contributing
+# Contributing to catnet
 
-Thank you for your interest in contributing to CatNet.
+First off, thank you for considering contributing to `catnet`! It's people like you that make the CatNet ecosystem a great tool.
 
-## Before you start
-- Open an issue before large changes.
-- Keep changes focused and small.
-- Align with repository scope.
-- Prefer incremental pull requests.
+## Rules
+1. **Do not implement scanning logic in this repository.** All network operations must go through `catnet-core`. If you need a new feature that involves scanning, DNS, or parsing, please open an issue or PR in `github.com/mendsec/catnet-core` first.
+2. The CLI is just a thin wrapper.
 
-## Pull request checklist
-- Code builds successfully.
-- Tests pass locally.
-- Documentation is updated when applicable.
-- No unrelated files were changed.
-- The PR description explains what changed and why.
+## Local Development
+To test multiplatform builds locally, you can use:
+```bash
+GOOS=windows go build ./...
+GOOS=linux go build ./...
+GOOS=darwin go build ./...
+```
 
-## Scope rule
-UI repositories must not duplicate core scanning logic.
+To inject a local development version during build:
+```bash
+go build -ldflags "-X github.com/mendsec/catnet/internal/cli.Version=dev-local" ./cmd/catnet
+```
+
+## Testing
+Run the integration tests before submitting PRs:
+```bash
+go test -race -v ./...
+```
