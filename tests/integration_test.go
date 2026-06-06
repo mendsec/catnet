@@ -16,10 +16,14 @@ import (
 var binaryPath string
 
 func TestMain(m *testing.M) {
+	os.Exit(testMain(m))
+}
+
+func testMain(m *testing.M) int {
 	// Build the binary
 	tmpDir, err := os.MkdirTemp("", "catnet-test")
 	if err != nil {
-		os.Exit(1)
+		return 1
 	}
 	defer os.RemoveAll(tmpDir)
 
@@ -31,11 +35,10 @@ func TestMain(m *testing.M) {
 
 	cmd := exec.Command("go", "build", "-o", binaryPath, "../cmd/catnet")
 	if err := cmd.Run(); err != nil {
-		os.Exit(1)
+		return 1
 	}
 
-	code := m.Run()
-	os.Exit(code)
+	return m.Run()
 }
 
 func TestScanOutputJSON(t *testing.T) {
@@ -67,7 +70,7 @@ func TestScanCancelledByContext(t *testing.T) {
 
 	// Trigger a background cancel
 	go func() {
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(1 * time.Second)
 		cmd.Process.Signal(os.Interrupt)
 	}()
 
