@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0.0",
+  "engineVersion": "0.1.0",
+  "total": 1,
+  "alive": 1,
+  "devices": [
+    {
+      "ip": "127.0.0.1",
+      "mac": "",
+      "hostname": "",
+      "isAlive": true,
+      "openPorts": [
+        22,
+        80
+      ],
+      "openPortsCount": 2
+    }
+  ]
+}
