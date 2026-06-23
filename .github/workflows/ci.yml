@@ -14,8 +14,8 @@ jobs:
         go: ["1.26.x"]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: ${{ matrix.go }}
       - run: go mod verify
@@ -30,15 +30,15 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Aikido Security Scan
-        uses: AikidoSec/github-actions-workflow@v1.0.13
+        uses: AikidoSec/github-actions-workflow@47d83dbcf3e6635044c4b31cef590c1e095217cc # v1.0.13
         with:
           secret-key: ${{ secrets.AIKIDO_SECRET_KEY }}
           fail-on-timeout: true
           fail-on-dependency-scan: true
-          fail-on-sast-scan: false
-          fail-on-iac-scan: false
+          fail-on-sast-scan: true
+          fail-on-iac-scan: true
           minimum-severity: 'HIGH'
           timeout-seconds: 180
           post-scan-status-comment: 'off'
