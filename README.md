@@ -45,6 +45,8 @@ catnet export result.json --format csv -o result.csv
 catnet scan 192.168.1.0/24 --ports 22,80,443,8080,3306
 ```
 
+Default ports: `22, 80, 443, 139, 445, 3389`. Use `--no-ports` to skip port scanning entirely.
+
 ### Quiet mode (scripts/CI)
 ```bash
 catnet scan 192.168.1.0/24 --format json --quiet
