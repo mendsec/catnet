@@ -1,6 +1,8 @@
-# Correções da Análise Técnica - Junho/2026 (catnet)
+# Correções da Análise Técnica — Junho/2026 (catnet)
 
 Este documento sumariza a execução do plano de ação para sanar as vulnerabilidades e melhorias técnicas apontadas especificamente para a CLI `catnet`.
+
+Todas as 37 descobertas foram resolvidas em 4 fases. Detalhes completos em `docs/audit_202606.md`.
 
 ## Resumo das Modificações no `catnet`
 
@@ -17,3 +19,8 @@ Este documento sumariza a execução do plano de ação para sanar as vulnerabil
 3. **Injeção de Dependência e Testabilidade (`C9`/`M7`)**
    - Refatoramos a estrutura `HumanOutput` (`output/human.go`) para utilizar atributos customizados do tipo `io.Writer` em vez de hardcodar `os.Stdout` e `os.Stderr`.
    - Criamos o pacote de testes em `human_test.go` para atestar com sucesso a formatação, e supressão de logs em modo silencioso (`--quiet`), verificando as injeções com buffers da memória.
+
+4. **Fase 4 — Documentação**
+   - Atualizado `docs/architecture.md` com design completo de todos os componentes.
+   - Adicionados detalhes das portas padrão no `README.md`.
+   - Atualizado `docs/audit_202606.md` para refletir todas as fases concluídas.
