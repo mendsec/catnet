@@ -74,5 +74,4 @@ jobs:
             --head develop-signed \
             --title "chore: merge develop → main" \
             --body "Automated PR by github-actions[bot]." \
-            2>/dev/null || \
-            echo "PR already exists, skipping."
+            || echo "PR already exists, skipping."
