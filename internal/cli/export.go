@@ -33,7 +33,7 @@ var exportCmd = &cobra.Command{
 		}
 
 		if report.SchemaVersion != "" {
-			if len(report.SchemaVersion) > 0 && report.SchemaVersion[0] != '1' {
+			if len(report.SchemaVersion) > 0 && report.SchemaVersion[0] != '1' && report.SchemaVersion[0] != '2' {
 				fmt.Fprintf(os.Stderr, "[WARN] Unknown schema version '%s'. Export might skip unknown fields.\n", report.SchemaVersion)
 			}
 		}
