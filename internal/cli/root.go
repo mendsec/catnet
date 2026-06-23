@@ -4,10 +4,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	noColor bool
-)
-
 var rootCmd = &cobra.Command{
 	Use:   "catnet",
 	Short: "catnet — Network scanner CLI",
@@ -17,7 +13,7 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "Disable colored output")
+	rootCmd.PersistentFlags().Bool("no-color", false, "Disable colored output")
 }
 
 // Execute executes the root command.

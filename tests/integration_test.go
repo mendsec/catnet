@@ -107,6 +107,30 @@ func TestScanInvalidTarget(t *testing.T) {
 	}
 }
 
+func TestExportXMLFromJSON(t *testing.T) {
+	tmpDir := t.TempDir()
+	jsonPath := filepath.Join(tmpDir, "input.json")
+
+	jsonBytes, err := os.ReadFile("../testdata/expected_output.json")
+	if err != nil {
+		t.Fatalf("Failed to read testdata: %v", err)
+	}
+	os.WriteFile(jsonPath, jsonBytes, 0644)
+
+	cmd := exec.Command(binaryPath, "export", jsonPath, "--format", "xml")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("Expected nil error, got %v: %s", err, out)
+	}
+
+	if !bytes.Contains(out, []byte("<schemaVersion>")) {
+		t.Errorf("XML output missing schemaVersion element, got: %s", out)
+	}
+	if !bytes.Contains(out, []byte("<ip>127.0.0.1</ip>")) {
+		t.Errorf("XML output missing device IP, got: %s", out)
+	}
+}
+
 func TestExportCSVFromJSON(t *testing.T) {
 	tmpDir := t.TempDir()
 	jsonPath := filepath.Join(tmpDir, "input.json")

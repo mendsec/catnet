@@ -1,0 +1,16 @@
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+
+linters-settings:
+  errcheck:
+    ignore: fmt:Fprintf,[Ww]rite[Ff]lush
+
+issues:
+  exclude-dirs:
+    - .aider-desk
