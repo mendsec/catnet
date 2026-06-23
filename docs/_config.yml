@@ -1,0 +1,27 @@
+title: catnet
+description: >-
+  Scriptable network scanner CLI for security engineers and sysadmins.
+  Powered by catnet-core — zero external dependencies in the engine.
+baseurl: "/catnet"
+url: "https://mendsec.github.io"
+theme: jekyll-theme-cayman
+show_downloads: true
+github:
+  repository_url: https://github.com/mendsec/catnet
+navigation:
+  - title: Home
+    url: /
+  - title: Installation
+    url: /installation/
+  - title: CLI Reference
+    url: /cli-reference/
+  - title: Output Reference
+    url: /output-reference/
+  - title: Use Cases
+    url: /use-cases/
+  - title: Architecture
+    url: /architecture/
+  - title: Wiki
+    url: https://github.com/mendsec/catnet/wiki
+  - title: catnet-core
+    url: https://github.com/mendsec/catnet-core
