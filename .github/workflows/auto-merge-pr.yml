@@ -67,13 +67,11 @@ jobs:
 
       - name: Create Pull Request
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.BOT_PAT }}
         run: |
-          gh api repos/mendsec/catnet/pulls \
-            --method POST \
-            --field title="chore: merge develop → main" \
-            --field head="develop-signed" \
-            --field base="main" \
-            --field body="Automated PR by github-actions[bot]." \
-            2>/dev/null || \
-            echo "PR already exists, skipping."
+          gh pr create \
+            --base main \
+            --head develop-signed \
+            --title "chore: merge develop → main" \
+            --body "Automated PR by github-actions[bot]." \
+            || echo "PR already exists, skipping."
