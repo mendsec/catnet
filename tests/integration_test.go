@@ -3,10 +3,13 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -41,8 +44,31 @@ func testMain(m *testing.M) int {
 	return m.Run()
 }
 
+func startTestServer(t *testing.T) int {
+	t.Helper()
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("Failed to start test server: %v", err)
+	}
+	port := ln.Addr().(*net.TCPAddr).Port
+	go func() {
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			conn.Close()
+		}
+	}()
+	t.Cleanup(func() { ln.Close() })
+	return port
+}
+
 func TestScanOutputJSON(t *testing.T) {
-	cmd := exec.Command(binaryPath, "scan", "127.0.0.1", "--format", "json", "--quiet")
+	port := startTestServer(t)
+	portStr := fmt.Sprintf("%d", port)
+
+	cmd := exec.Command(binaryPath, "scan", "127.0.0.1", "--format", "json", "--quiet", "--ports", portStr)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("Expected nil error, got %v: %s", err, out)
@@ -55,6 +81,9 @@ func TestScanOutputJSON(t *testing.T) {
 	
 	if ver, ok := data["schemaVersion"].(string); !ok || ver != "2.0.0" {
 		t.Errorf("Expected schemaVersion 2.0.0, got %v", ver)
+	}
+	if alive, ok := data["alive"].(float64); !ok || alive != 1 {
+		t.Errorf("Expected 1 alive host, got %v", alive)
 	}
 }
 
@@ -150,6 +179,72 @@ func TestExportCSVFromJSON(t *testing.T) {
 		t.Fatalf("Expected nil error, got %v: %s", err, out)
 	}
 
+	if !bytes.Contains(out, []byte("IP,Hostname,MAC,Status")) {
+		t.Errorf("CSV output missing header, got: %s", out)
+	}
+}
+
+func TestExportInvalidInputFile(t *testing.T) {
+	cmd := exec.Command(binaryPath, "export", "/nonexistent/path/input.json", "--format", "json")
+	err := cmd.Run()
+	if err == nil {
+		t.Fatalf("Expected error for non-existent input file")
+	}
+	if exitErr, ok := err.(*exec.ExitError); ok {
+		if exitErr.ExitCode() != cli.ExitCodeInputError {
+			t.Errorf("Expected ExitCodeInputError (%d), got %v", cli.ExitCodeInputError, exitErr.ExitCode())
+		}
+	}
+}
+
+func TestExportInvalidJSON(t *testing.T) {
+	tmpDir := t.TempDir()
+	badPath := filepath.Join(tmpDir, "bad.json")
+	os.WriteFile(badPath, []byte("{invalid json}"), 0644)
+
+	cmd := exec.Command(binaryPath, "export", badPath, "--format", "json")
+	err := cmd.Run()
+	if err == nil {
+		t.Fatalf("Expected error for invalid JSON")
+	}
+	if exitErr, ok := err.(*exec.ExitError); ok {
+		if exitErr.ExitCode() != cli.ExitCodeInputError {
+			t.Errorf("Expected ExitCodeInputError (%d), got %v", cli.ExitCodeInputError, exitErr.ExitCode())
+		}
+	}
+}
+
+func TestExportUnsupportedFormat(t *testing.T) {
+	tmpDir := t.TempDir()
+	jsonPath := filepath.Join(tmpDir, "input.json")
+	jsonBytes, _ := os.ReadFile("../testdata/expected_output.json")
+	os.WriteFile(jsonPath, jsonBytes, 0644)
+
+	cmd := exec.Command(binaryPath, "export", jsonPath, "--format", "invalid")
+	err := cmd.Run()
+	if err == nil {
+		t.Fatalf("Expected error for unsupported format")
+	}
+	if exitErr, ok := err.(*exec.ExitError); ok {
+		if exitErr.ExitCode() != cli.ExitCodeInputError {
+			t.Errorf("Expected ExitCodeInputError (%d), got %v", cli.ExitCodeInputError, exitErr.ExitCode())
+		}
+	}
+}
+
+func TestExportSchemaVersionWarning(t *testing.T) {
+	tmpDir := t.TempDir()
+	jsonPath := filepath.Join(tmpDir, "input.json")
+	jsonBytes, _ := os.ReadFile("../testdata/expected_output.json")
+	badVersion := string(jsonBytes)
+	badVersion = strings.ReplaceAll(badVersion, "\"2.0.0\"", "\"99.0.0\"")
+	os.WriteFile(jsonPath, []byte(badVersion), 0644)
+
+	cmd := exec.Command(binaryPath, "export", jsonPath, "--format", "csv")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("Expected nil error, got %v: %s", err, out)
+	}
 	if !bytes.Contains(out, []byte("IP,Hostname,MAC,Status")) {
 		t.Errorf("CSV output missing header, got: %s", out)
 	}

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -29,7 +31,9 @@ var exportCmd = &cobra.Command{
 		}
 
 		if report.SchemaVersion != "" {
-			if len(report.SchemaVersion) > 0 && report.SchemaVersion[0] != '1' && report.SchemaVersion[0] != '2' {
+			majorStr, _, _ := strings.Cut(report.SchemaVersion, ".")
+			major, err := strconv.Atoi(majorStr)
+			if err != nil || major < 1 || major > 2 {
 				fmt.Fprintf(os.Stderr, "[WARN] Unknown schema version '%s'. Export might skip unknown fields.\n", report.SchemaVersion)
 			}
 		}
