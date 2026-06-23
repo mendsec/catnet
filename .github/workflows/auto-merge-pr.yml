@@ -30,8 +30,6 @@ jobs:
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          eval "$(ssh-agent -s)"
-          ssh-add ~/.ssh/id_ed25519
           ssh-keygen -y -f ~/.ssh/id_ed25519 > ~/.ssh/id_ed25519.pub
           git config gpg.format ssh
           git config user.signingkey ~/.ssh/id_ed25519.pub
@@ -47,6 +45,7 @@ jobs:
             echo "No new commits, nothing to do."
             exit 0
           fi
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git checkout -B develop-signed origin/develop
           git filter-branch -f \
             --env-filter 'export GIT_COMMITTER_NAME="mendsec" GIT_COMMITTER_EMAIL="fabiomendesilva@gmail.com"' \
