@@ -55,19 +55,21 @@ jobs:
           echo "Signed $COUNT commit(s) on develop-signed."
           git push origin HEAD:develop-signed --force-with-lease
 
-      - name: Close old PR (develop → main)
+      - name: Close old PRs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          OLD_PR=$(gh pr list --head develop --base main --json number -q '.[0].number' 2>/dev/null || echo "")
-          if [ -n "$OLD_PR" ]; then
-            gh pr close "$OLD_PR" --comment "Replaced by signed PR." 2>/dev/null || true
-            echo "Closed old PR #$OLD_PR."
-          fi
+          for HEAD in develop develop-signed; do
+            OLD_PR=$(gh pr list --head "$HEAD" --base main --json number -q '.[0].number' 2>/dev/null || echo "")
+            if [ -n "$OLD_PR" ]; then
+              gh pr close "$OLD_PR" --comment "Replaced by signed PR." 2>/dev/null || true
+              echo "Closed old PR #$OLD_PR (head: $HEAD)."
+            fi
+          done
 
       - name: Create Pull Request
         env:
-          GH_TOKEN: ${{ secrets.BOT_PAT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr create \
             --base main \
