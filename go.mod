@@ -3,7 +3,7 @@ module github.com/mendsec/catnet
 go 1.26.4
 
 require (
-	github.com/mendsec/catnet-core v0.2.0
+	github.com/mendsec/catnet-core v0.1.2
 	github.com/spf13/cobra v1.10.2
 )
 
