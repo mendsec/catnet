@@ -17,8 +17,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fast-forward develop to main
+      - name: Sync develop to main
         run: |
+          git fetch origin main develop --depth=100
+          BEHIND=$(git rev-list --count origin/develop..origin/main 2>/dev/null || echo "0")
+          if [ "$BEHIND" -eq "0" ]; then
+            echo "Develop is already synced with main."
+            exit 0
+          fi
+          echo "Develop is $BEHIND commit(s) behind main. Syncing..."
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-          git push origin origin/main:develop
-          echo "Develop synced to main ($(git rev-list --count origin/develop..origin/main) commits behind before sync)."
+          git push --force-with-lease origin origin/main:develop
+          echo "Develop synced to main."
