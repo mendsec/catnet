@@ -53,8 +53,8 @@ func TestScanOutputJSON(t *testing.T) {
 		t.Fatalf("Output is not valid JSON: %v\nOutput was: %s", err, out)
 	}
 	
-	if ver, ok := data["schemaVersion"].(string); !ok || ver != "1.0.0" {
-		t.Errorf("Expected schemaVersion 1.0.0, got %v", ver)
+	if ver, ok := data["schemaVersion"].(string); !ok || ver != "2.0.0" {
+		t.Errorf("Expected schemaVersion 2.0.0, got %v", ver)
 	}
 }
 
