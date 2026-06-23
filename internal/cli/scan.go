@@ -13,22 +13,17 @@ import (
 	"github.com/mendsec/catnet/internal/cli/output"
 )
 
-var (
-	format          string
-	scanPorts       []int
-	scanThreads     int
-	scanPingTimeout int
-	scanPortTimeout int
-	scanOutput      string
-	scanQuiet       bool
-	scanNoPorts     bool
-)
-
 var scanCmd = &cobra.Command{
 	Use:   "scan [targets]",
 	Short: "Scan a network range for live hosts",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		format, _ := cmd.Flags().GetString("format")
+		scanQuiet, _ := cmd.Flags().GetBool("quiet")
+		noColor, _ := cmd.Flags().GetBool("no-color")
+		scanOutput, _ := cmd.Flags().GetString("output")
+		scanNoPorts, _ := cmd.Flags().GetBool("no-ports")
+
 		var allIPs []string
 		for _, arg := range args {
 			parts := strings.Split(arg, ",")
@@ -50,22 +45,29 @@ var scanCmd = &cobra.Command{
 		}
 
 		cfg := engine.DefaultConfig()
+
 		if scanNoPorts {
 			cfg.DefaultPorts = []int{}
 		} else if cmd.Flags().Changed("ports") {
-			cfg.DefaultPorts = scanPorts
+			cfg.DefaultPorts, _ = cmd.Flags().GetIntSlice("ports")
 		}
-		
-		cfg.MaxThreads = scanThreads
-		cfg.PingTimeoutMs = scanPingTimeout
-		cfg.PortTimeoutMs = scanPortTimeout
+
+		if cmd.Flags().Changed("threads") {
+			cfg.MaxThreads, _ = cmd.Flags().GetInt("threads")
+		}
+		if cmd.Flags().Changed("ping-timeout") {
+			cfg.PingTimeoutMs, _ = cmd.Flags().GetInt("ping-timeout")
+		}
+		if cmd.Flags().Changed("port-timeout") {
+			cfg.PortTimeoutMs, _ = cmd.Flags().GetInt("port-timeout")
+		}
 		cfg.Sanitize()
 
 		ctx, cancel := WithCancelOnSignal(cmd.Context())
 		defer cancel()
 
 		var eventHandler engine.EventCallback
-		
+
 		switch format {
 		case "json":
 			handler := output.NewJSONOutput(scanQuiet)
@@ -82,7 +84,7 @@ var scanCmd = &cobra.Command{
 		}
 
 		report, err := engine.StartScan(ctx, allIPs, cfg, eventHandler)
-		
+
 		if err != nil {
 			if ctx.Err() != nil {
 				return NewExitError(ExitCodeInterrupted, "Scan cancelled")
@@ -95,7 +97,7 @@ var scanCmd = &cobra.Command{
 			if err != nil {
 				return NewExitError(ExitCodeRuntimeError, "Failed to encode JSON: %v", err)
 			}
-			
+
 			if scanOutput != "" {
 				if err := os.WriteFile(scanOutput, jsonBytes, 0600); err != nil {
 					return NewExitError(ExitCodeRuntimeError, "Failed to write output file: %v", err)
@@ -111,12 +113,12 @@ var scanCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(scanCmd)
-	scanCmd.Flags().IntSliceVarP(&scanPorts, "ports", "p", []int{22, 80, 443, 139, 445, 3389}, "Ports to scan")
-	scanCmd.Flags().IntVarP(&scanThreads, "threads", "t", 64, "Max concurrent threads")
-	scanCmd.Flags().IntVar(&scanPingTimeout, "ping-timeout", 1000, "Ping timeout in milliseconds")
-	scanCmd.Flags().IntVar(&scanPortTimeout, "port-timeout", 500, "Port timeout in milliseconds")
-	scanCmd.Flags().StringVarP(&scanOutput, "output", "o", "", "Write JSON output to file instead of stdout")
-	scanCmd.Flags().BoolVarP(&scanQuiet, "quiet", "q", false, "Suppress progress output")
-	scanCmd.Flags().BoolVar(&scanNoPorts, "no-ports", false, "Skip port scanning entirely")
-	scanCmd.Flags().StringVar(&format, "format", "human", "Output format: json, human")
+	scanCmd.Flags().IntSliceP("ports", "p", []int{22, 80, 443, 139, 445, 3389}, "Ports to scan")
+	scanCmd.Flags().IntP("threads", "t", 64, "Max concurrent threads")
+	scanCmd.Flags().Int("ping-timeout", 1000, "Ping timeout in milliseconds")
+	scanCmd.Flags().Int("port-timeout", 500, "Port timeout in milliseconds")
+	scanCmd.Flags().StringP("output", "o", "", "Write JSON output to file instead of stdout")
+	scanCmd.Flags().BoolP("quiet", "q", false, "Suppress progress output")
+	scanCmd.Flags().Bool("no-ports", false, "Skip port scanning entirely")
+	scanCmd.Flags().String("format", "human", "Output format: json, human")
 }

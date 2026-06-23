@@ -11,15 +11,12 @@ import (
 	"github.com/mendsec/catnet-core/pkg/results"
 )
 
-var (
-	exportOutput string
-)
-
 var exportCmd = &cobra.Command{
 	Use:   "export [input.json]",
 	Short: "Export a previous scan result to a different format",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		exportOutput, _ := cmd.Flags().GetString("output")
 		inputFile := args[0]
 		data, err := os.ReadFile(inputFile)
 		if err != nil {
@@ -27,7 +24,6 @@ var exportCmd = &cobra.Command{
 		}
 
 		var report results.ScanReport
-		// Usar json.Unmarshal diretamente permite que campos desconhecidos sejam ignorados (DisallowUnknownFields é falso por default)
 		if err := json.Unmarshal(data, &report); err != nil {
 			return NewExitError(ExitCodeInputError, "Failed to parse JSON: %v", err)
 		}
@@ -39,7 +35,7 @@ var exportCmd = &cobra.Command{
 		}
 
 		fVal, _ := cmd.Flags().GetString("format")
-		
+
 		var outBytes []byte
 		switch fVal {
 		case "json":
@@ -70,8 +66,7 @@ var exportCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(exportCmd)
-	// We override the persistent 'format' flag for the export command, adding a shorthand and different default.
 	exportCmd.Flags().StringP("format", "f", "", "Output format: json, csv, xml (required)")
 	exportCmd.MarkFlagRequired("format")
-	exportCmd.Flags().StringVarP(&exportOutput, "output", "o", "", "Write output to file (default: stdout)")
+	exportCmd.Flags().StringP("output", "o", "", "Write output to file (default: stdout)")
 }
