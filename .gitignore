@@ -21,6 +21,10 @@ go.work
 /bin/
 /dist/
 
+# AI agent artifacts
+.aider-desk/
+.aider.input.history
+
 # IDE and Editor directories
 .idea/
 .vscode/
