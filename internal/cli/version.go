@@ -8,7 +8,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Version = "dev"
+// Variables set by GoReleaser ldflags at build time.
+var (
+	Version = "dev"
+	Commit  = "none"
+	Date    = "unknown"
+)
 var shortVersion bool
 
 var versionCmd = &cobra.Command{
@@ -21,6 +26,7 @@ var versionCmd = &cobra.Command{
 		}
 
 		fmt.Printf("catnet/%s (%s/%s) %s\n", Version, runtime.GOOS, runtime.GOARCH, runtime.Version())
+		fmt.Printf("commit: %s  built: %s\n", Commit, Date)
 
 		coreVersion := "unknown"
 		if buildInfo, ok := debug.ReadBuildInfo(); ok {

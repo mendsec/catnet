@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+> **For maintainers:** The GitHub Release body is generated
+> automatically by GoReleaser from commit messages grouped by
+> Conventional Commits type, plus a static install footer.
+> The `[Unreleased]` section in this file is the canonical
+> human-written summary and is linked from the release body.
+
 ## [Unreleased]
 
 ## [0.2.0] - 2026-06-23
