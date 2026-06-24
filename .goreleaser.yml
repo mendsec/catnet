@@ -1,6 +1,14 @@
+# .goreleaser.yml
+# GoReleaser configuration for catnet.
+# Docs: https://goreleaser.com/customization/
+
+version: 2
+
 before:
   hooks:
     - go mod tidy
+    - go generate ./...
+
 builds:
   - id: catnet
     main: ./cmd/catnet
@@ -14,27 +22,132 @@ builds:
     goarch:
       - amd64
       - arm64
+    # Inject version, commit, and build date into the binary.
     ldflags:
-      - -s -w -X github.com/mendsec/catnet/internal/cli.Version={{.Version}}
+      - -s -w
+      - -X github.com/mendsec/catnet/internal/cli.Version={{.Version}}
+      - -X github.com/mendsec/catnet/internal/cli.Commit={{.Commit}}
+      - -X github.com/mendsec/catnet/internal/cli.Date={{.Date}}
+
 archives:
-  - format: tar.gz
+  - id: catnet
+    ids:
+      - catnet
+    # Consistent naming: catnet_Linux_x86_64.tar.gz
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
+      {{- else if eq .Arch "arm64" }}arm64
       {{- else }}{{ .Arch }}{{ end }}
-      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    formats: ["tar.gz"]
     format_overrides:
       - goos: windows
-        format: zip
+        formats: ["zip"]
+    # Include license and readme in every archive.
+    files:
+      - LICENSE
+      - README.md
+
 checksum:
-  name_template: 'checksums.txt'
-snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+# Use CHANGELOG.md as the source of truth for release notes.
+# GoReleaser extracts the section matching the current tag version.
+# This means the CHANGELOG.md [X.Y.Z] section IS the release body.
 changelog:
+  use: github
   sort: asc
+  groups:
+    - title: "⚠️ Breaking Changes"
+      regexp: "^.*!:.*$"
+      order: 0
+    - title: "✨ New Features"
+      regexp: "^.*feat(\\(.+\\))?:.*$"
+      order: 1
+    - title: "🐛 Bug Fixes"
+      regexp: "^.*fix(\\(.+\\))?:.*$"
+      order: 2
+    - title: "🧪 Tests"
+      regexp: "^.*test(\\(.+\\))?:.*$"
+      order: 3
+    - title: "📚 Documentation"
+      regexp: "^.*docs(\\(.+\\))?:.*$"
+      order: 4
+    - title: "🔧 Maintenance"
+      regexp: "^.*(chore|refactor|perf|ci)(\\(.+\\))?:.*$"
+      order: 5
+    - title: "Other"
+      order: 999
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
+      - "^Merge "
+      - "^merge "
+      - "typo"
+
+# Release body uses a Go template that combines:
+#   1. The structured commit groups (above)
+#   2. A static install block injected automatically
+release:
+  github:
+    owner: mendsec
+    name: catnet
+  # Replace the default body with our professional template.
+  # The template file lives at .goreleaser/release-template.md
+  # and is rendered by GoReleaser before publishing.
+  header: |
+    ## catnet {{ .Tag }} — {{ .Date | date "January 2006" }}
+
+    > Released on {{ .Date | date "2006-01-02" }} ·
+    > Engine: [catnet-core](https://github.com/mendsec/catnet-core)
+
+  footer: |
+    ---
+
+    ### Installation
+
+    **Linux / macOS:**
+    ```bash
+    curl -sSL https://github.com/mendsec/catnet/releases/download/{{ .Tag }}/catnet_Linux_x86_64.tar.gz \
+      | tar xz && sudo mv catnet /usr/local/bin/
+    catnet version
+    ```
+
+    **Windows:** Download `catnet_Windows_x86_64.zip` from the assets
+    below, extract, and add to `PATH`.
+
+    **go install:**
+    ```bash
+    go install github.com/mendsec/catnet/cmd/catnet@{{ .Tag }}
+    ```
+
+    **Verify checksum:**
+    ```bash
+    sha256sum -c checksums.txt --ignore-missing
+    ```
+
+    ---
+
+    ### Binary Assets
+
+    | File | Platform | Arch |
+    |---|---|---|
+    | `catnet_Linux_x86_64.tar.gz` | Linux | amd64 |
+    | `catnet_Linux_arm64.tar.gz` | Linux | arm64 |
+    | `catnet_Darwin_x86_64.tar.gz` | macOS | amd64 |
+    | `catnet_Darwin_arm64.tar.gz` | macOS (Apple Silicon) | arm64 |
+    | `catnet_Windows_x86_64.zip` | Windows | amd64 |
+    | `catnet_Windows_arm64.zip` | Windows | arm64 |
+    | `checksums.txt` | SHA-256 for all archives | — |
+
+    All binaries are statically linked. No runtime dependencies.
+
+    ---
+
+    **Full diff:** [{{ .PreviousTag }}...{{ .Tag }}](https://github.com/mendsec/catnet/compare/{{ .PreviousTag }}...{{ .Tag }})
+
+    *Found a security issue? Read [SECURITY.md](https://github.com/mendsec/catnet/blob/main/SECURITY.md) before opening a public issue.*
+
+  # Do not mark as pre-release automatically.
+  prerelease: auto
