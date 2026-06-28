@@ -84,9 +84,19 @@ Device fields:
 | Repository | Role |
 |---|---|
 | `catnet-core` | Shared scanning engine (no CLI/GUI) |
-| `catnet` | **This repository â€” Scriptable CLI** |
+| `catnet` | **This repository Ã¢â‚¬â€ Scriptable CLI** |
 | `catnet-tui` | Interactive TUI interface |
 | `catnet-scanner` | Desktop GUI application |
 
 ## License
 MIT
+
+
+## Part of the CatNet ecosystem
+
+| | Repository | Role |
+|---|---|---|
+| ⚙️ | [catnet-io/engine](https://github.com/catnet-io/engine) | Shared Go scanning engine |
+| 💻 | [catnet-io/catnet](https://github.com/catnet-io/catnet) | CLI |
+| 🖥️ | [catnet-io/app](https://github.com/catnet-io/app) | Desktop app |
+| 📟 | [catnet-io/tui](https://github.com/catnet-io/tui) | Terminal UI |
